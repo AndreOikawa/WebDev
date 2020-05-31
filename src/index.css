@@ -17,8 +17,39 @@ body {
     margin-bottom: 10px;
   }
   
-  .square {
+  .empty {
     background: #fff;
+  }
+
+  .i {
+    background: turquoise;
+  }
+
+  .l {
+    background: blue;
+  }
+
+  .j {
+    background: orange;
+  }
+
+  .o {
+    background: yellow;
+  }
+
+  .s {
+    background: greenyellow;
+  }
+
+  .t {
+    background: purple;
+  }
+
+  .z {
+    background: red;
+  }
+
+  .square {
     border: 1px solid #999;
     float: left;
     font-size: 24px;
