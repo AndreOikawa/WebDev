@@ -2,6 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+const WIDTH = 10;
+const HEIGHT = 20;
+
 function Square(props) {
   return (
     <button className={props.value + " square"} onClick={props.onClick}>
@@ -15,26 +18,51 @@ function Square(props) {
       super(props)
       this.state = {
         squares: Array(200).fill("empty"),
-        currentPos: 4,
+        xPos: 4,
+        yPos: 0,
         colors: ["empty", "i", "s", "z", "t", "l", "j", "o"],
+        
+
 
         // test stuff
         testTick: 0,
+        currentPos: 4,
       };
       
       this.tick = this.tick.bind(this)
       setInterval(this.tick, 1000);
     }
 
-    // handleKeyPress = event => {
-    //   const squares = this.state.squares.slice();
-      
-    //   squares[0] = event.key;
+    handleKeyPress(e) {
+      console.log("key pressed " + e.key);
+      let x = this.state.xPos;
+      let y = this.state.yPos;
+      switch( e.key ) {
+        // case ArrowUp: y = (y+1) % HEIGHT; break;    
+        case "ArrowDown": if (y+1 < HEIGHT) y++; break;
+        case "ArrowLeft": if (x-1 >= 0) x--; break;    
+        case "ArrowRight": if (x+1 < WIDTH) x++; break;
+        case " ": y = HEIGHT-1;
+      }
 
-    //   this.setState({
-    //     squares: squares,
-    //   });
-    // };
+      const squares = this.state.squares.slice();
+      
+      squares[y * WIDTH + x] = this.state.colors[1];
+
+      this.setState({
+        squares: squares,
+        xPos: x,
+        yPos: y,
+      });
+    }
+
+    componentWillMount() {
+      document.addEventListener("keydown", this.handleKeyPress.bind(this));
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener("keydown", this.handleKeyPress.bind(this));
+    }  
 
     handleClick(i) {
       const squares = this.state.squares.slice();
@@ -51,7 +79,7 @@ function Square(props) {
         <Square key={i} 
           value={this.state.squares[i]}
           onClick={() => this.handleClick(i)}
-          // onKeyDown={this.handleKeyPress}
+          onKeyDown={(e) => this.handleKeyPress(e)}
         />
       );
       
