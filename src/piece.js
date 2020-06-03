@@ -6,7 +6,7 @@ class Piece {
     }
 
     rotate(isCCW) {
-        this.orientation = (this.orientation + 1) % 4;
+        this.orientation = (this.orientation + (isCCW ? 1 : -1) + 4) % 4;
     }
 
     getBottomParts() {
@@ -30,8 +30,8 @@ class I extends Piece {
 
     getBottomParts() {
         var arr = []
-        if (this.cells[0]%10 != 0) arr = this.cells;
-        else arr.push(this.cells[3]);
+        if (this.cells[this.orientation][0]%10 == 0) arr = this.cells[this.orientation];
+        else arr.push(this.cells[this.orientation][3]);
         return arr;
     }
 }

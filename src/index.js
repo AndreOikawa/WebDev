@@ -35,47 +35,71 @@ class Board extends React.Component {
     // setInterval(this.tick, 1000);
   }
 
-  paintCells(cells, board, val) {
+  paintCells(clear, x, y) {
+    const cells = this.state.currentPiece.getCells().slice();
+    const val = this.state.currentPiece.type;
+    const board = this.state.squares.slice();
+
+    for (let i = 0; i < cells.length; i++) {
+      cells[i] += y * WIDTH + x;
+      // console.log(toPaint[i]);
+    }
+
     for (let i = 0; i < cells.length; i++) {
         
-      board[cells[i]] = val;
+      board[cells[i]] = (clear ? "empty" : val);
     }
-    return board;
+    
+    this.setState({
+      squares: board,
+      xPos: x,
+      yPos: y,
+    });
   }
 
   handleKeyPress(e) {
     console.log("key pressed " + e.key);
     let x = this.state.xPos;
     let y = this.state.yPos;
+
+    this.paintCells(true, x, y);
+
     switch( e.key ) {
-      // case ArrowUp: y = (y+1) % HEIGHT; break;    
+      case "ArrowUp":
+      case "x": this.state.currentPiece.rotate(true); break;
       case "ArrowDown": if (y+1 < HEIGHT) y++; break;
       case "ArrowLeft": if (x-1 >= 0) x--; break;    
       case "ArrowRight": if (x+1 < WIDTH) x++; break;
-      case " ": y = HEIGHT-1;
+      case " ": y = HEIGHT-1; break;
+      case "z": this.state.currentPiece.rotate(false); break; 
     }
     
-    console.log(x, y);
+    // console.log(x, y);
     
     const toPaint = this.state.currentPiece.getCells().slice();
-    const rightMost = toPaint[toPaint.length - 1] % WIDTH;
+    const rightMost = toPaint.reduce((a, b) => {
+      return Math.max(a%WIDTH, b%WIDTH);
+    });
 
     if (x + rightMost >= WIDTH) {
         x = WIDTH - rightMost - 1;
     }
 
-    for (let i = 0; i < toPaint.length; i++) {
-      toPaint[i] += y * WIDTH + x;
-      console.log(toPaint[i]);
-    }
-    // this.state.squares.slice()
-    const squares = this.paintCells(toPaint, Array(200).fill("empty"), this.state.currentPiece.type);
+    const bottomMost = this.state.currentPiece.getBottomParts().slice();
+    console.log("bottomMost ", bottomMost);
+    y += bottomMost.map((a) => {
+      const arrVal = y * WIDTH + a + 10;
+      console.log("arrval y a ",arrVal, y, a);
+      return (arrVal >= HEIGHT * WIDTH || this.state.squares[arrVal] != "empty") ? -1 : 0;
+    }).reduce((a, b) => { return Math.min(a,b)});
 
-    this.setState({
-      squares: squares,
-      xPos: x,
-      yPos: y,
-    });
+    
+    this.paintCells(false, x, y);
+    
+    // this.state.squares.slice()
+    // const squares = this.paintCells(toPaint, Array(200).fill("empty"), this.state.currentPiece.type);
+
+    
   }
 
   componentWillMount() {
