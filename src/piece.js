@@ -13,6 +13,14 @@ class Piece {
         return [];
     }
 
+    getLeftParts() {
+        return [];
+    }
+
+    getRightParts() {
+        return [];
+    }
+
     getCells() {
         return this.cells[this.orientation];
     }
@@ -21,17 +29,31 @@ class Piece {
 class I extends Piece {
     constructor(type) {
         super("i");
-        this.cells = [  [10,11,12,13],
-                        [2,12,22,32],
-                        [20,21,22,23],
-                        [1,11,21,31]
+        this.cells = [  [{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:3,y:1}],
+                        [{x:2,y:0},{x:2,y:1},{x:2,y:2},{x:2,y:3}],
+                        [{x:0,y:2},{x:1,y:2},{x:2,y:2},{x:3,y:2}],
+                        [{x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3}],
                     ];
     }
 
     getBottomParts() {
         var arr = []
-        if (this.cells[this.orientation][0]%10 == 0) arr = this.cells[this.orientation];
-        else arr.push(this.cells[this.orientation][3]);
+        if (this.cells[this.orientation][0].x == 0) arr = this.cells[this.orientation];
+        else arr.push({x: this.cells[this.orientation][3].x, y: 3});
+        return arr;
+    }
+
+    getLeftParts() {
+        var arr = []
+        if (this.cells[this.orientation][0].x == 0) arr.push(this.cells[this.orientation][0]);
+        else arr = this.cells[this.orientation];
+        return arr;
+    }
+
+    getRightParts() {
+        var arr = []
+        if (this.cells[this.orientation][0].x == 0) arr.push(this.cells[this.orientation][3]);
+        else arr = this.cells[this.orientation];
         return arr;
     }
 }
@@ -39,10 +61,10 @@ class I extends Piece {
 class J extends Piece {
     constructor(type) {
         super("j");
-        this.cells = [  [0,10,11,12],
-                        [1,11,21,2],
-                        [10,11,12,22],
-                        [20,21,11,1]
+        this.cells = [  [{x:0,y:0},{x:0,y:1},{x:1,y:1},{x:2,y:1}],
+                        [{x:1,y:0},{x:2,y:0},{x:1,y:1},{x:1,y:2}],
+                        [{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:2,y:2}],
+                        [{x:0,y:2},{x:1,y:2},{x:1,y:1},{x:1,y:0}],
                     ];
     }
 
@@ -54,10 +76,10 @@ class J extends Piece {
 class L extends Piece {
     constructor(type) {
         super("l");
-        this.cells = [  [10,11,12,2],
-                        [1,11,21,22],
-                        [20,10,11,12],
-                        [0,1,11,21]
+        this.cells = [  [{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:2,y:0}],
+                        [{x:1,y:0},{x:1,y:1},{x:1,y:2},{x:2,y:2}],
+                        [{x:0,y:2},{x:0,y:1},{x:1,y:1},{x:2,y:1}],
+                        [{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:1,y:2}],
                     ];
     }
 
@@ -69,10 +91,10 @@ class L extends Piece {
 class O extends Piece {
     constructor(type) {
         super("o");
-        this.cells = [  [1,2,11,12],
-                        [1,2,11,12],
-                        [1,2,11,12],
-                        [1,2,11,12]
+        this.cells = [  [{x:1,y:0},{x:1,y:1},{x:2,y:0},{x:2,y:1}],
+                        [{x:1,y:0},{x:1,y:1},{x:2,y:0},{x:2,y:1}],
+                        [{x:1,y:0},{x:1,y:1},{x:2,y:0},{x:2,y:1}],
+                        [{x:1,y:0},{x:1,y:1},{x:2,y:0},{x:2,y:1}],
                     ];
     }
 
@@ -84,10 +106,10 @@ class O extends Piece {
 class S extends Piece {
     constructor(type) {
         super("s");
-        this.cells = [  [10,11,1,2],
-                        [1,11,12,22],
-                        [20,21,11,12],
-                        [0,10,11,21]
+        this.cells = [  [{x:0,y:1},{x:1,y:1},{x:1,y:0},{x:2,y:0}],
+                        [{x:1,y:0},{x:1,y:1},{x:2,y:1},{x:2,y:2}],
+                        [{x:0,y:2},{x:1,y:2},{x:1,y:1},{x:2,y:1}],
+                        [{x:0,y:0},{x:0,y:1},{x:1,y:1},{x:1,y:2}],
                     ];
     }
 
@@ -98,10 +120,10 @@ class S extends Piece {
 class T extends Piece {
     constructor(type) {
         super("t");
-        this.cells = [  [1,10,11,12],
-                        [1,11,21,12],
-                        [10,11,21,12],
-                        [10,1,11,21]
+        this.cells = [  [{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:1,y:0}],
+                        [{x:1,y:0},{x:1,y:2},{x:1,y:1},{x:2,y:1}],
+                        [{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:1,y:2}],
+                        [{x:1,y:0},{x:1,y:1},{x:1,y:2},{x:0,y:1}],
                     ];
     }
 
@@ -112,10 +134,10 @@ class T extends Piece {
 class Z extends Piece {
     constructor(type) {
         super("z");
-        this.cells = [  [0,1,11,12],
-                        [21,11,12,2],
-                        [10,11,21,22],
-                        [20,10,11,1]
+        this.cells = [  [{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:2,y:1}],
+                        [{x:1,y:2},{x:1,y:1},{x:2,y:1},{x:2,y:0}],
+                        [{x:0,y:1},{x:1,y:1},{x:1,y:2},{x:2,y:2}],
+                        [{x:0,y:2},{x:0,y:1},{x:1,y:1},{x:1,y:0}],
                     ];
     }
 

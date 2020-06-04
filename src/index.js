@@ -41,13 +41,8 @@ class Board extends React.Component {
     const board = this.state.squares.slice();
 
     for (let i = 0; i < cells.length; i++) {
-      cells[i] += y * WIDTH + x;
-      // console.log(toPaint[i]);
-    }
-
-    for (let i = 0; i < cells.length; i++) {
         
-      board[cells[i]] = (clear ? "empty" : val);
+      board[(cells[i].y + y) * WIDTH + x + cells[i].x] = (clear ? "empty" : val);
     }
     
     this.setState({
@@ -59,41 +54,75 @@ class Board extends React.Component {
 
   handleKeyPress(e) {
     console.log("key pressed " + e.key);
-    let x = this.state.xPos;
-    let y = this.state.yPos;
+    
 
-    this.paintCells(true, x, y);
-
+    let redraw = false;
     switch( e.key ) {
       case "ArrowUp":
-      case "x": this.state.currentPiece.rotate(true); break;
-      case "ArrowDown": if (y+1 < HEIGHT) y++; break;
-      case "ArrowLeft": if (x-1 >= 0) x--; break;    
-      case "ArrowRight": if (x+1 < WIDTH) x++; break;
-      case " ": y = HEIGHT-1; break;
-      case "z": this.state.currentPiece.rotate(false); break; 
+      case "x": 
+      case "z": 
+      case "ArrowDown": 
+      case "ArrowLeft": 
+      case "ArrowRight": 
+      case " ": redraw = true; break;
+    }
+    if (!redraw) {
+      return;
+    }
+
+    let x = this.state.xPos;
+    let y = this.state.yPos;
+    this.paintCells(true, x, y);
+
+    let movedLeft = false;
+    let movedRight = false;
+    let movedDown = false;
+    let rotated = false;
+    switch( e.key ) {
+      case "ArrowUp":
+      case "x": rotated = true; this.state.currentPiece.rotate(true); break;
+      case "z": rotated = true; this.state.currentPiece.rotate(false); break; 
+      case "ArrowDown": movedDown = true; y++; break;
+      case "ArrowLeft": movedLeft = true; x--; break;    
+      case "ArrowRight": movedRight = true; x++; break;
+      case " ": movedDown = true; y = HEIGHT-1; break;
     }
     
-    // console.log(x, y);
     
     const toPaint = this.state.currentPiece.getCells().slice();
-    const rightMost = toPaint.reduce((a, b) => {
-      return Math.max(a%WIDTH, b%WIDTH);
-    });
-
-    if (x + rightMost >= WIDTH) {
-        x = WIDTH - rightMost - 1;
-    }
-
-    const bottomMost = this.state.currentPiece.getBottomParts().slice();
-    console.log("bottomMost ", bottomMost);
-    y += bottomMost.map((a) => {
-      const arrVal = y * WIDTH + a + 10;
-      console.log("arrval y a ",arrVal, y, a);
-      return (arrVal >= HEIGHT * WIDTH || this.state.squares[arrVal] != "empty") ? -1 : 0;
-    }).reduce((a, b) => { return Math.min(a,b)});
-
     
+    if (movedDown || rotated) {
+      while (toPaint.map(a => {
+        const squareVal = (a.y + y) * WIDTH + (a.x + x);
+        console.log(squareVal);
+        return (a.y + y >= HEIGHT || this.state.squares[squareVal] != "empty");
+      }).reduce((a,b) => { return a || b; } )) {
+        console.log(y, toPaint);
+        y--;
+      }
+    } 
+
+    if (movedLeft) {
+      const leftMost = this.state.currentPiece.getLeftParts().slice();
+      while (leftMost.map(a => {
+        const squareVal = (a.y + y) * WIDTH + (a.x + x);
+        return (a.x + x < 0 || this.state.squares[squareVal] != "empty");
+      }).reduce((a,b) => { return a || b; })) {
+        x++;
+      }
+    } 
+
+    if (movedRight) {
+      const rightMost = this.state.currentPiece.getRightParts().slice();
+      while (rightMost.map(a => {
+        const squareVal = (a.y + y) * WIDTH + (a.x + x);
+        return (a.x + x >= WIDTH || this.state.squares[squareVal] != "empty");
+      }).reduce((a,b) => { return a || b; })) {
+        x--;
+      }
+    }
+    
+    console.log(x,y);
     this.paintCells(false, x, y);
     
     // this.state.squares.slice()
