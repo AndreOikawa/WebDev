@@ -2,15 +2,22 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
-const {I} = require('./piece.js');
+const {I, J, L, S, Z, O, T} = require('./piece.js');
 
 const WIDTH = 10;
 const HEIGHT = 20;
 
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1)); // random index from 0 to i
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
 function Square(props) {
   return (
     <button className={props.value + " square"} onClick={props.onClick}>
-      {props.value}
+      {/* {props.value} */}
     </button>
   );
 }
@@ -21,11 +28,12 @@ class Board extends React.Component {
     this.state = {
       squares: Array(200).fill("empty"),
       xPos: 4,
-      yPos: 0,
+      yPos: -1,
       colors: ["empty", "i", "s", "z", "t", "l", "j", "o"],
       
-      currentPiece: new I("i"),
-
+      currentPiece: 0,
+      currBag: [],
+      nextBag: [],
       // test stuff
       testTick: 0,
       currentPos: 4,
@@ -35,14 +43,25 @@ class Board extends React.Component {
     // setInterval(this.tick, 1000);
   }
 
+  createBag() {
+    let newBag = [new I("i"), new J("j"), new L("l"),new O("o"),new S("s"),new Z("z"),new T("t")]
+    shuffle(newBag);
+
+    this.setState({
+      currBag: this.state.nextBag,
+      nextBag: newBag,
+    });
+  }
+
   paintCells(clear, x, y) {
-    const cells = this.state.currentPiece.getCells().slice();
-    const val = this.state.currentPiece.type;
+    const piece = this.state.currBag[this.state.currentPiece];
+    const cells = piece.getCells().slice();
+    const val = piece.type;
     const board = this.state.squares.slice();
 
     for (let i = 0; i < cells.length; i++) {
-        
-      board[(cells[i].y + y) * WIDTH + x + cells[i].x] = (clear ? "empty" : val);
+      const cell = (cells[i].y + y) * WIDTH + x + cells[i].x;
+      if (cell >= 0) board[cell] = (clear ? "empty" : val);
     }
     
     this.setState({
@@ -55,9 +74,9 @@ class Board extends React.Component {
   handleKeyPress(e) {
     console.log("key pressed " + e.key);
     
-
     let redraw = false;
     switch( e.key ) {
+      case "p":
       case "ArrowUp":
       case "x": 
       case "z": 
@@ -67,6 +86,7 @@ class Board extends React.Component {
       case " ": redraw = true; break;
     }
     if (!redraw) {
+      console.log("Nothing to do");
       return;
     }
 
@@ -78,34 +98,41 @@ class Board extends React.Component {
     let movedRight = false;
     let movedDown = false;
     let rotated = false;
+
+    let testPiece = this.state.currentPiece;
     switch( e.key ) {
+      case "p": testPiece = (testPiece + 1) % this.state.currBag.length; break;
       case "ArrowUp":
-      case "x": rotated = true; this.state.currentPiece.rotate(true); break;
-      case "z": rotated = true; this.state.currentPiece.rotate(false); break; 
+      case "x": rotated = true; this.state.currBag[this.state.currentPiece].rotate(true); break;
+      case "z": rotated = true; this.state.currBag[this.state.currentPiece].rotate(false); break; 
       case "ArrowDown": movedDown = true; y++; break;
       case "ArrowLeft": movedLeft = true; x--; break;    
       case "ArrowRight": movedRight = true; x++; break;
       case " ": movedDown = true; y = HEIGHT-1; break;
     }
     
-    
-    const toPaint = this.state.currentPiece.getCells().slice();
-    
-    if (movedDown || rotated) {
+    if (testPiece != this.state.currentPiece) this.setState({currentPiece: testPiece});
+    const toPaint = this.state.currBag[this.state.currentPiece].getCells().slice();
+    if (rotated) {
+      movedDown = true;
+      movedLeft = true;
+      movedRight = true;
+    }
+    if (movedDown) {
       while (toPaint.map(a => {
         const squareVal = (a.y + y) * WIDTH + (a.x + x);
-        console.log(squareVal);
+        if (a.y + y < 0) return false;
         return (a.y + y >= HEIGHT || this.state.squares[squareVal] != "empty");
       }).reduce((a,b) => { return a || b; } )) {
-        console.log(y, toPaint);
         y--;
       }
     } 
 
     if (movedLeft) {
-      const leftMost = this.state.currentPiece.getLeftParts().slice();
+      const leftMost = this.state.currBag[this.state.currentPiece].getLeftParts().slice();
       while (leftMost.map(a => {
         const squareVal = (a.y + y) * WIDTH + (a.x + x);
+        if (a.y + y < 0) return false;
         return (a.x + x < 0 || this.state.squares[squareVal] != "empty");
       }).reduce((a,b) => { return a || b; })) {
         x++;
@@ -113,21 +140,17 @@ class Board extends React.Component {
     } 
 
     if (movedRight) {
-      const rightMost = this.state.currentPiece.getRightParts().slice();
+      const rightMost = this.state.currBag[this.state.currentPiece].getRightParts().slice();
       while (rightMost.map(a => {
         const squareVal = (a.y + y) * WIDTH + (a.x + x);
+        if (a.y + y < 0) return false;
         return (a.x + x >= WIDTH || this.state.squares[squareVal] != "empty");
       }).reduce((a,b) => { return a || b; })) {
         x--;
       }
     }
     
-    console.log(x,y);
     this.paintCells(false, x, y);
-    
-    // this.state.squares.slice()
-    // const squares = this.paintCells(toPaint, Array(200).fill("empty"), this.state.currentPiece.type);
-
     
   }
 
@@ -184,8 +207,6 @@ class Board extends React.Component {
       rows.push(i);
     }
 
-    
-
     return (
       <div className="board">
         {rows.map((number) => {
@@ -197,7 +218,6 @@ class Board extends React.Component {
   }
 
   tick() {
-    console.log("tick");
     const squares = this.state.squares.slice();
     const tickVal = (this.state.testTick + 1)%this.state.colors.length;
     squares[this.state.currentPos] = this.state.colors[tickVal]
@@ -209,14 +229,16 @@ class Board extends React.Component {
     });
   }
 
-  
-
   render() {
-    let status = "Some texgt";
+    // start game
+    if (this.state.currBag.length == 0) {
+      this.createBag();
+      this.createBag();
+    }
     
     return (
       <div>
-        <div className="status">{status}</div>
+        {/* <div className="status">{status}</div> */}
         {this.renderBoard()}
       </div>
     );

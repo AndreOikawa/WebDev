@@ -10,15 +10,43 @@ class Piece {
     }
 
     getBottomParts() {
-        return [];
+        var arr = [];
+        for (let x = 0; x < 4; ++x) {
+            var bestCell = {x: -1, y: -1};
+            for (let i = 0; i < this.cells[this.orientation].length; ++i) {
+                const cell = this.cells[this.orientation][i];
+                if (cell.y > bestCell.y && cell.x === x) bestCell = cell;
+            }
+            if (bestCell.x === x) arr.push(bestCell);
+        }
+        return arr;
     }
 
     getLeftParts() {
-        return [];
+        var arr = [];
+        for (let y = 0; y < 4; ++y) {
+            var bestCell = {x: -1, y: -1};
+            for (let i = 0; i < this.cells[this.orientation].length; ++i) {
+                const cell = this.cells[this.orientation][i];
+                console.log(y, cell, bestCell);
+                if ((cell.x < bestCell.x || bestCell.x == -1) && cell.y === y) bestCell = cell;
+            }
+            if (bestCell.y === y) arr.push(bestCell);
+        }
+        return arr;
     }
 
     getRightParts() {
-        return [];
+        var arr = [];
+        for (let y = 0; y < 4; ++y) {
+            var bestCell = {x: -1, y: -1};
+            for (let i = 0; i < this.cells[this.orientation].length; ++i) {
+                const cell = this.cells[this.orientation][i];
+                if (cell.x > bestCell.x && cell.y === y) bestCell = cell;
+            }
+            if (bestCell.y == y) arr.push(bestCell);
+        }
+        return arr;
     }
 
     getCells() {
@@ -35,27 +63,6 @@ class I extends Piece {
                         [{x:1,y:0},{x:1,y:1},{x:1,y:2},{x:1,y:3}],
                     ];
     }
-
-    getBottomParts() {
-        var arr = []
-        if (this.cells[this.orientation][0].x == 0) arr = this.cells[this.orientation];
-        else arr.push({x: this.cells[this.orientation][3].x, y: 3});
-        return arr;
-    }
-
-    getLeftParts() {
-        var arr = []
-        if (this.cells[this.orientation][0].x == 0) arr.push(this.cells[this.orientation][0]);
-        else arr = this.cells[this.orientation];
-        return arr;
-    }
-
-    getRightParts() {
-        var arr = []
-        if (this.cells[this.orientation][0].x == 0) arr.push(this.cells[this.orientation][3]);
-        else arr = this.cells[this.orientation];
-        return arr;
-    }
 }
 
 class J extends Piece {
@@ -66,10 +73,6 @@ class J extends Piece {
                         [{x:0,y:1},{x:1,y:1},{x:2,y:1},{x:2,y:2}],
                         [{x:0,y:2},{x:1,y:2},{x:1,y:1},{x:1,y:0}],
                     ];
-    }
-
-    getBottomParts() {
-       // TODO
     }
 }
 
@@ -82,10 +85,6 @@ class L extends Piece {
                         [{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:1,y:2}],
                     ];
     }
-
-    getBottomParts() {
-        // TODO
-    }
 }
 
 class O extends Piece {
@@ -96,10 +95,6 @@ class O extends Piece {
                         [{x:1,y:0},{x:1,y:1},{x:2,y:0},{x:2,y:1}],
                         [{x:1,y:0},{x:1,y:1},{x:2,y:0},{x:2,y:1}],
                     ];
-    }
-
-    getBottomParts() {
-        // TODO
     }
 }
 
@@ -112,10 +107,6 @@ class S extends Piece {
                         [{x:0,y:0},{x:0,y:1},{x:1,y:1},{x:1,y:2}],
                     ];
     }
-
-    getBottomParts() {
-        // TODO
-    }
 }
 class T extends Piece {
     constructor(type) {
@@ -126,10 +117,6 @@ class T extends Piece {
                         [{x:1,y:0},{x:1,y:1},{x:1,y:2},{x:0,y:1}],
                     ];
     }
-
-    getBottomParts() {
-        // TODO
-    }
 }
 class Z extends Piece {
     constructor(type) {
@@ -139,10 +126,6 @@ class Z extends Piece {
                         [{x:0,y:1},{x:1,y:1},{x:1,y:2},{x:2,y:2}],
                         [{x:0,y:2},{x:0,y:1},{x:1,y:1},{x:1,y:0}],
                     ];
-    }
-
-    getBottomParts() {
-        // TODO
     }
 }
 exports.I = I
