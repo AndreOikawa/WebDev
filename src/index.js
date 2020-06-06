@@ -16,7 +16,7 @@ function shuffle(array) {
 
 function Square(props) {
   return (
-    <button className={props.value + " square"} onClick={props.onClick}>
+    <button className={props.value + " square"}>
       {/* {props.value} */}
     </button>
   );
@@ -30,7 +30,8 @@ class Board extends React.Component {
       xPos: 4,
       yPos: -1,
       colors: ["empty", "i", "s", "z", "t", "l", "j", "o"],
-      
+      lock: false,
+      fall: false,
       currentPiece: 0,
       currBag: [],
       nextBag: [],
@@ -40,7 +41,7 @@ class Board extends React.Component {
     };
     
     this.tick = this.tick.bind(this)
-    // setInterval(this.tick, 1000);
+    setInterval(this.tick, 500);
   }
 
   createBag() {
@@ -71,6 +72,18 @@ class Board extends React.Component {
     });
   }
 
+  invalidDownMove(tiles, x, y) {
+    // console.log(x,y);
+    // const toPaint = this.state.currBag[this.state.currentPiece].getCells().slice();
+    function checkTiles(a) {
+      // console.log(a);
+      const squareVal = (a.y + this.y) * WIDTH + (a.x + this.x);
+      if (a.y + this.y < 0) return false;
+      return (a.y + this.y >= HEIGHT || this.squares[squareVal] !== "empty");
+    }
+    return tiles.map(checkTiles, {x: x, y: y, squares: this.state.squares}).reduce((a,b) => { return a || b; } )
+  }
+
   handleKeyPress(e) {
     console.log("key pressed " + e.key);
     
@@ -84,6 +97,7 @@ class Board extends React.Component {
       case "ArrowLeft": 
       case "ArrowRight": 
       case " ": redraw = true; break;
+      default: break;
     }
     if (!redraw) {
       console.log("Nothing to do");
@@ -109,21 +123,19 @@ class Board extends React.Component {
       case "ArrowLeft": movedLeft = true; x--; break;    
       case "ArrowRight": movedRight = true; x++; break;
       case " ": movedDown = true; y = HEIGHT-1; break;
+      default: break;
     }
     
-    if (testPiece != this.state.currentPiece) this.setState({currentPiece: testPiece});
-    const toPaint = this.state.currBag[this.state.currentPiece].getCells().slice();
+    if (testPiece !== this.state.currentPiece) this.setState({currentPiece: testPiece});
     if (rotated) {
       movedDown = true;
       movedLeft = true;
       movedRight = true;
     }
     if (movedDown) {
-      while (toPaint.map(a => {
-        const squareVal = (a.y + y) * WIDTH + (a.x + x);
-        if (a.y + y < 0) return false;
-        return (a.y + y >= HEIGHT || this.state.squares[squareVal] != "empty");
-      }).reduce((a,b) => { return a || b; } )) {
+      const tiles = this.state.currBag[this.state.currentPiece].getCells().slice();
+      while (this.invalidDownMove(tiles, x, y)) {
+        console.log(y);
         y--;
       }
     } 
@@ -133,7 +145,7 @@ class Board extends React.Component {
       while (leftMost.map(a => {
         const squareVal = (a.y + y) * WIDTH + (a.x + x);
         if (a.y + y < 0) return false;
-        return (a.x + x < 0 || this.state.squares[squareVal] != "empty");
+        return (a.x + x < 0 || this.state.squares[squareVal] !== "empty");
       }).reduce((a,b) => { return a || b; })) {
         x++;
       }
@@ -144,7 +156,7 @@ class Board extends React.Component {
       while (rightMost.map(a => {
         const squareVal = (a.y + y) * WIDTH + (a.x + x);
         if (a.y + y < 0) return false;
-        return (a.x + x >= WIDTH || this.state.squares[squareVal] != "empty");
+        return (a.x + x >= WIDTH || this.state.squares[squareVal] !== "empty");
       }).reduce((a,b) => { return a || b; })) {
         x--;
       }
@@ -162,22 +174,10 @@ class Board extends React.Component {
       document.removeEventListener("keydown", this.handleKeyPress.bind(this));
   }  
 
-  handleClick(i) {
-    const squares = this.state.squares.slice();
-    
-    squares[i] = this.state.colors[this.state.testTick]
-
-    this.setState({
-      squares: squares,
-    });
-  }
-
   renderSquare(i) {
     return (
       <Square key={i} 
         value={this.state.squares[i]}
-        onClick={() => this.handleClick(i)}
-        onKeyDown={(e) => this.handleKeyPress(e)}
       />
     );
     
@@ -218,20 +218,43 @@ class Board extends React.Component {
   }
 
   tick() {
-    const squares = this.state.squares.slice();
-    const tickVal = (this.state.testTick + 1)%this.state.colors.length;
-    squares[this.state.currentPos] = this.state.colors[tickVal]
-    const newPos = (this.state.currentPos + 10)%squares.length;
+    let lockFrame = this.state.lock;
+    const x = this.state.xPos;
+    const y = this.state.yPos + 1;
+    const tiles = this.state.currBag[this.state.currentPiece].getBottomParts().slice();
+    if (lockFrame && this.invalidDownMove(tiles, x, y)) {
+
+    } else {
+      lockFrame = false;
+    }
+    
+    let fallFrame = this.state.fall;
+    if (fallFrame && !this.invalidDownMove(tiles, x, y)) {
+      console.log(fallFrame);
+      this.paintCells(true, x, y-1);
+      this.paintCells(false, x, y);
+      fallFrame = false;
+      this.setState({
+        xPos: x,
+        yPos: y,
+      });
+    } else if (fallFrame) {
+      fallFrame = false;
+      lockFrame = true;
+    } else {
+      fallFrame = true;
+    }
     this.setState({
-      squares: squares,
-      currentPos: newPos,
-      testTick: tickVal,
+      lock: lockFrame,
+      fall: fallFrame,
     });
+    
+    
   }
 
   render() {
     // start game
-    if (this.state.currBag.length == 0) {
+    if (this.state.currBag.length === 0) {
       this.createBag();
       this.createBag();
     }
