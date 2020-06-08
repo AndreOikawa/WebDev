@@ -37,8 +37,11 @@ class Board extends React.Component {
       nextBag: [],
     };
     
-    this.tick = this.tick.bind(this)
-    setInterval(this.tick, 100);
+    this.fall = this.fall.bind(this);
+    setInterval(this.fall, 100);
+
+    this.lock = this.lock.bind(this)
+    // setInterval(this.lock, 500);
   }
 
   createBag() {
@@ -113,8 +116,10 @@ class Board extends React.Component {
     // console.log("key pressed " + e.key);
     
     let redraw = false;
+    let reset = false;
     switch( e.key ) {
       case "p":
+      case "r": reset = true;
       case "ArrowUp":
       case "x": 
       case "z": 
@@ -128,7 +133,12 @@ class Board extends React.Component {
       // console.log("Nothing to do");
       return;
     }
-
+    if (reset) {
+      const arr = Array(200).fill("empty");
+      this.setState({
+        squares: arr,
+      });
+    }
     let x = this.state.xPos;
     let y = this.state.yPos;
     this.paintCells(true, x, y);
@@ -245,35 +255,44 @@ class Board extends React.Component {
 
   }
 
-  tick() {
+  lock() {
     let lockFrame = this.state.lock;
     const x = this.state.xPos;
     const y = this.state.yPos + 1;
     const tiles = this.state.currBag[this.state.currentPiece].getBottomParts().slice();
     if (lockFrame && this.invalidDownMove(tiles, x, y)) {
-
+      this.newPiece();
     } else {
       lockFrame = false;
     }
+
+    this.setState({
+      lock: lockFrame,
+    });
+  }
+
+  fall() {
+    let lockFrame = this.state.lock;
+    const x = this.state.xPos;
+    const y = this.state.yPos + 1;
+    const tiles = this.state.currBag[this.state.currentPiece].getBottomParts().slice();
     
-    let fallFrame = this.state.fall;
-    if (fallFrame && !this.invalidDownMove(tiles, x, y)) {
+    if (!this.invalidDownMove(tiles, x, y)) {
       this.paintCells(true, x, y-1);
       this.paintCells(false, x, y);
-      fallFrame = false;
+      lockFrame = false;
       this.setState({
         xPos: x,
         yPos: y,
       });
-    } else if (fallFrame) {
-      fallFrame = false;
+    } else if (!lockFrame) {
       lockFrame = true;
     } else {
-      fallFrame = true;
+      setTimeout(this.lock, 500);
     }
+
     this.setState({
       lock: lockFrame,
-      fall: fallFrame,
     });
     
     
@@ -297,7 +316,6 @@ class Board extends React.Component {
 
 class Game extends React.Component {
   render() {
-    // setInterval(Board.tick, 1000);
     return (
       <div className="game">
         <div className="game-board">
