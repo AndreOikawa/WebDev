@@ -28,7 +28,7 @@ class Piece {
             var bestCell = {x: -1, y: -1};
             for (let i = 0; i < this.cells[this.orientation].length; ++i) {
                 const cell = this.cells[this.orientation][i];
-                console.log(y, cell, bestCell);
+                // console.log(y, cell, bestCell);
                 if ((cell.x < bestCell.x || bestCell.x === -1) && cell.y === y) bestCell = cell;
             }
             if (bestCell.y === y) arr.push(bestCell);

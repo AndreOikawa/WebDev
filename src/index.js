@@ -28,20 +28,17 @@ class Board extends React.Component {
     this.state = {
       squares: Array(200).fill("empty"),
       xPos: 4,
-      yPos: -1,
+      yPos: -3,
       colors: ["empty", "i", "s", "z", "t", "l", "j", "o"],
       lock: false,
       fall: false,
       currentPiece: 0,
       currBag: [],
       nextBag: [],
-      // test stuff
-      testTick: 0,
-      currentPos: 4,
     };
     
     this.tick = this.tick.bind(this)
-    setInterval(this.tick, 500);
+    setInterval(this.tick, 100);
   }
 
   createBag() {
@@ -73,10 +70,7 @@ class Board extends React.Component {
   }
 
   invalidDownMove(tiles, x, y) {
-    // console.log(x,y);
-    // const toPaint = this.state.currBag[this.state.currentPiece].getCells().slice();
     function checkTiles(a) {
-      // console.log(a);
       const squareVal = (a.y + this.y) * WIDTH + (a.x + this.x);
       if (a.y + this.y < 0) return false;
       return (a.y + this.y >= HEIGHT || this.squares[squareVal] !== "empty");
@@ -84,8 +78,39 @@ class Board extends React.Component {
     return tiles.map(checkTiles, {x: x, y: y, squares: this.state.squares}).reduce((a,b) => { return a || b; } )
   }
 
+  newPiece() {
+    const currentPiece = (this.state.currentPiece + 1) % this.state.currBag.length;
+    console.log(currentPiece);
+    
+    if (currentPiece == 0) {
+      this.createBag();
+    }
+
+    this.setState({
+      currentPiece: currentPiece,
+      yPos: -3,
+      xPos: 4,
+    });
+  }
+
+  highestY(x, y) {
+    const tiles = this.state.currBag[this.state.currentPiece].getBottomParts().slice();
+    function checkTiles(a) {
+      const squareVal = (a.y + this.y) * WIDTH + (a.x + this.x);
+      if (a.y + this.y < 0) return false;
+      return (a.y + this.y >= HEIGHT || this.squares[squareVal] !== "empty");
+    }
+
+    while (!tiles.map(checkTiles, {x: x, y: y, squares: this.state.squares}).reduce((a,b) => { return a || b; } )) {
+      y++;
+    }
+
+    return y - 1;
+    
+  }
+
   handleKeyPress(e) {
-    console.log("key pressed " + e.key);
+    // console.log("key pressed " + e.key);
     
     let redraw = false;
     switch( e.key ) {
@@ -100,7 +125,7 @@ class Board extends React.Component {
       default: break;
     }
     if (!redraw) {
-      console.log("Nothing to do");
+      // console.log("Nothing to do");
       return;
     }
 
@@ -112,6 +137,7 @@ class Board extends React.Component {
     let movedRight = false;
     let movedDown = false;
     let rotated = false;
+    let hardDrop = false;
 
     let testPiece = this.state.currentPiece;
     switch( e.key ) {
@@ -122,7 +148,7 @@ class Board extends React.Component {
       case "ArrowDown": movedDown = true; y++; break;
       case "ArrowLeft": movedLeft = true; x--; break;    
       case "ArrowRight": movedRight = true; x++; break;
-      case " ": movedDown = true; y = HEIGHT-1; break;
+      case " ": movedDown = true; hardDrop = true; y = this.highestY(x, y); break;
       default: break;
     }
     
@@ -135,7 +161,6 @@ class Board extends React.Component {
     if (movedDown) {
       const tiles = this.state.currBag[this.state.currentPiece].getCells().slice();
       while (this.invalidDownMove(tiles, x, y)) {
-        console.log(y);
         y--;
       }
     } 
@@ -163,6 +188,9 @@ class Board extends React.Component {
     }
     
     this.paintCells(false, x, y);
+    if (hardDrop) {
+      this.newPiece();
+    }
     
   }
 
@@ -230,7 +258,6 @@ class Board extends React.Component {
     
     let fallFrame = this.state.fall;
     if (fallFrame && !this.invalidDownMove(tiles, x, y)) {
-      console.log(fallFrame);
       this.paintCells(true, x, y-1);
       this.paintCells(false, x, y);
       fallFrame = false;
