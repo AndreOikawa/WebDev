@@ -17,7 +17,7 @@ function shuffle(array) {
 function Square(props) {
   return (
     <button className={props.value + " square"}>
-      {/* {props.value} */}
+      {/* {props.y} */}
     </button>
   );
 }
@@ -26,7 +26,7 @@ class Board extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      squares: Array(200).fill("empty"),
+      squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
       xPos: 4,
       yPos: -3,
       colors: ["empty", "i", "s", "z", "t", "l", "j", "o"],
@@ -38,10 +38,9 @@ class Board extends React.Component {
     };
     
     this.fall = this.fall.bind(this);
-    setInterval(this.fall, 100);
+    setInterval(this.fall, 500);
 
     this.lock = this.lock.bind(this)
-    // setInterval(this.lock, 500);
   }
 
   createBag() {
@@ -56,13 +55,16 @@ class Board extends React.Component {
 
   paintCells(clear, x, y) {
     const piece = this.state.currBag[this.state.currentPiece];
+
     const cells = piece.getCells().slice();
     const val = piece.type;
     const board = this.state.squares.slice();
-
+    
     for (let i = 0; i < cells.length; i++) {
-      const cell = (cells[i].y + y) * WIDTH + x + cells[i].x;
-      if (cell >= 0) board[cell] = (clear ? "empty" : val);
+      const cellY = cells[i].y + y;
+      const cellX = cells[i].x + x;
+      
+      if (cellX >= 0 && cellY >= 0) board[cellY][cellX] = (clear ? "empty" : val);
     }
     
     this.setState({
@@ -74,14 +76,66 @@ class Board extends React.Component {
 
   invalidDownMove(tiles, x, y) {
     function checkTiles(a) {
-      const squareVal = (a.y + this.y) * WIDTH + (a.x + this.x);
-      if (a.y + this.y < 0) return false;
-      return (a.y + this.y >= HEIGHT || this.squares[squareVal] !== "empty");
+      const squareY = a.y + this.y;
+      const squareX = a.x + this.x;
+      if (squareY < 0) return false;
+      return (squareY >= HEIGHT || this.squares[squareY][squareX] !== "empty");
     }
     return tiles.map(checkTiles, {x: x, y: y, squares: this.state.squares}).reduce((a,b) => { return a || b; } )
   }
 
+  // clearLines(yVals) {
+  //   const squares = this.state.squares.slice();
+  //   for (let i = yVals.length - 1; i > 0; --i) {
+
+  //     for (let square = yVals[i] * WIDTH; square < (yVals[i] + 1) * WIDTH; square++) {
+  //       squares[square] = "empty";
+  //     }
+  //   }
+
+  //   this.setState({
+  //     squares: squares,
+  //   });
+  // }
+
   newPiece() {
+    
+    const y = this.state.yPos;
+    const pieceY = [...new Set(this.state.currBag[this.state.currentPiece].getCells().slice().map(a => a.y))].sort().reverse();
+    
+    console.log(pieceY);
+
+    const squares = this.state.squares.slice();
+    let count = 0;
+    let change = false;
+    for (let i = 0; i < pieceY.length; i++) {
+      var filled = true;
+      for (let x = 0; x < WIDTH; x++) {
+        if (squares[pieceY[i] + y][x] == "empty") {
+          filled = false;
+          break;
+        }
+      }
+      if (filled) {
+        change = true;
+        console.log("clear line", pieceY[i]+y);
+        squares.splice(pieceY[i] + y, 1);
+        count++;
+      }
+    }
+
+    while (count > 0) {
+      const emptyLine = Array(WIDTH).fill("empty");
+      squares.splice(0,0,emptyLine);
+      count--;
+    }
+
+    if (change) {
+      this.setState({
+        squares: squares,
+      })
+    }
+
     const currentPiece = (this.state.currentPiece + 1) % this.state.currBag.length;
     console.log(currentPiece);
     
@@ -99,9 +153,10 @@ class Board extends React.Component {
   highestY(x, y) {
     const tiles = this.state.currBag[this.state.currentPiece].getBottomParts().slice();
     function checkTiles(a) {
-      const squareVal = (a.y + this.y) * WIDTH + (a.x + this.x);
-      if (a.y + this.y < 0) return false;
-      return (a.y + this.y >= HEIGHT || this.squares[squareVal] !== "empty");
+      const squareY = a.y + this.y;
+      const squareX = a.x + this.x;
+      if (squareY < 0) return false;
+      return (squareY >= HEIGHT || this.squares[squareY][squareX] !== "empty");
     }
 
     while (!tiles.map(checkTiles, {x: x, y: y, squares: this.state.squares}).reduce((a,b) => { return a || b; } )) {
@@ -150,6 +205,7 @@ class Board extends React.Component {
     let hardDrop = false;
 
     let testPiece = this.state.currentPiece;
+    console.log(x,y);
     switch( e.key ) {
       case "p": testPiece = (testPiece + 1) % this.state.currBag.length; break;
       case "ArrowUp":
@@ -178,9 +234,10 @@ class Board extends React.Component {
     if (movedLeft) {
       const leftMost = this.state.currBag[this.state.currentPiece].getLeftParts().slice();
       while (leftMost.map(a => {
-        const squareVal = (a.y + y) * WIDTH + (a.x + x);
-        if (a.y + y < 0) return false;
-        return (a.x + x < 0 || this.state.squares[squareVal] !== "empty");
+        const squareY = a.y + y;
+        const squareX = a.x + x;
+        if (squareY < 0) return false;
+        return (squareX < 0 || this.state.squares[squareY][squareX] !== "empty");
       }).reduce((a,b) => { return a || b; })) {
         x++;
       }
@@ -189,9 +246,10 @@ class Board extends React.Component {
     if (movedRight) {
       const rightMost = this.state.currBag[this.state.currentPiece].getRightParts().slice();
       while (rightMost.map(a => {
-        const squareVal = (a.y + y) * WIDTH + (a.x + x);
-        if (a.y + y < 0) return false;
-        return (a.x + x >= WIDTH || this.state.squares[squareVal] !== "empty");
+        const squareY = a.y + y;
+        const squareX = a.x + x;        
+        if (squareY < 0) return false;
+        return (squareX >= WIDTH || this.state.squares[squareY][squareX] !== "empty");
       }).reduce((a,b) => { return a || b; })) {
         x--;
       }
@@ -212,36 +270,35 @@ class Board extends React.Component {
       document.removeEventListener("keydown", this.handleKeyPress.bind(this));
   }  
 
-  renderSquare(i) {
+  renderSquare(xy) {
     return (
-      <Square key={i} 
-        value={this.state.squares[i]}
+      <Square key={xy.x + xy.y * WIDTH} 
+        value={this.state.squares[xy.y][xy.x]}
+        // y={xy.y}
       />
     );
     
   }
 
   renderRow(rowNum) {
-    const rowLength = 10;
     const row = [];
-    for (let i = 0; i < rowLength; i++) {
-      row.push(rowLength * rowNum + i);
+    for (let i = 0; i < WIDTH; i++) {
+      row.push({y: rowNum, x: i});
     }
 
     return (
       <div key={rowNum} className="board-row">
-        {row.map((number) => {
-          return this.renderSquare(number);
+        {row.map(xy => {
+          return this.renderSquare(xy);
         })}
       </div>
     );
   }
 
   renderBoard() {
-    const numRows = 20;
     const rows = [];
     
-    for (let i = 0; i < numRows; i++) {
+    for (let i = 0; i < HEIGHT; i++) {
       rows.push(i);
     }
 
