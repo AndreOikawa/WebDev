@@ -79,4 +79,8 @@ body {
   .game-info {
     margin-left: 20px;
   }
+
+  .hold-piece {
+    margin-right: 20px;
+  }
   

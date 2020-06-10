@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
-const {I, J, L, S, Z, O, T} = require('./piece.js');
+const {I, J, L, S, Z, O, T, Piece} = require('./piece.js');
 
 const WIDTH = 10;
 const HEIGHT = 20;
@@ -84,20 +84,6 @@ class Board extends React.Component {
     return tiles.map(checkTiles, {x: x, y: y, squares: this.state.squares}).reduce((a,b) => { return a || b; } )
   }
 
-  // clearLines(yVals) {
-  //   const squares = this.state.squares.slice();
-  //   for (let i = yVals.length - 1; i > 0; --i) {
-
-  //     for (let square = yVals[i] * WIDTH; square < (yVals[i] + 1) * WIDTH; square++) {
-  //       squares[square] = "empty";
-  //     }
-  //   }
-
-  //   this.setState({
-  //     squares: squares,
-  //   });
-  // }
-
   newPiece() {
     
     const y = this.state.yPos;
@@ -110,7 +96,9 @@ class Board extends React.Component {
     let change = false;
     for (let i = 0; i < pieceY.length; i++) {
       var filled = true;
+      if (pieceY[i] + y < 0) continue;
       for (let x = 0; x < WIDTH; x++) {
+        
         if (squares[pieceY[i] + y][x] == "empty") {
           filled = false;
           break;
@@ -371,10 +359,106 @@ class Board extends React.Component {
   }
 }
 
+class Display extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      squares: new Array(4).fill().map(() => new Array(4).fill("empty")),
+      currentPiece: new I(),
+    };
+  }
+
+  paintSquares(piece) {
+    const tiles = piece.getCells();
+    const type = piece.val;
+    const squares = this.state.sqaures.slice();
+    for (let i = 0; i < tiles.length; i++) {
+      const x = tiles[i].x;
+      const y = tiles[i].y;
+      squares[y][x] = type;
+    }
+
+    this.setState({
+      squares: squares,
+    });
+  }
+
+  updatePiece(newPiece) {
+    var currentPiece = new Piece();
+    switch(newPiece) {
+      case "I": currentPiece = new I(); break;
+      case "L": currentPiece = new L(); break;
+      case "J": currentPiece = new J(); break;
+      case "S": currentPiece = new S(); break;
+      case "Z": currentPiece = new Z(); break;
+      case "O": currentPiece = new O(); break;
+      default: break;
+    }
+
+    this.paintSquares(currentPiece);
+
+    this.setState({
+      currentPiece: currentPiece,
+    });
+  }
+
+  renderSquare(xy) {
+    return (
+      <Square key={xy.x + xy.y * WIDTH} 
+        value={this.state.squares[xy.y][xy.x]}
+        // y={xy.y}
+      />
+    );
+    
+  }
+
+  renderRow(rowNum) {
+    const row = [];
+    for (let i = 0; i < 4; i++) {
+      row.push({y: rowNum, x: i});
+    }
+
+    return (
+      <div key={rowNum} className="board-row">
+        {row.map(xy => {
+          return this.renderSquare(xy);
+        })}
+      </div>
+    );
+  }
+
+  renderBoard() {
+    const rows = [];
+    
+    for (let i = 0; i < 4; i++) {
+      rows.push(i);
+    }
+
+    return (
+      <div className="board">
+        {rows.map((number) => {
+          return this.renderRow(number)
+        })}
+      </div>      
+    );
+
+  }
+  render() {
+    return (
+      <div>
+        {this.renderBoard()}
+      </div>
+    );
+  }
+}
+
 class Game extends React.Component {
   render() {
     return (
       <div className="game">
+        <div className="hold-piece">
+          <Display />
+        </div>
         <div className="game-board">
           <Board />
         </div>

@@ -86,7 +86,6 @@ class L extends Piece {
                     ];
     }
 }
-
 class O extends Piece {
     constructor(type) {
         super("o");
@@ -97,7 +96,6 @@ class O extends Piece {
                     ];
     }
 }
-
 class S extends Piece {
     constructor(type) {
         super("s");
@@ -135,3 +133,4 @@ exports.O = O
 exports.S = S
 exports.T = T
 exports.Z = Z
+exports.Piece = Piece
