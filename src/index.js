@@ -23,24 +23,174 @@ function Square(props) {
 }
 
 class Board extends React.Component {
+  renderSquare(val) {
+    return (
+      <Square //key={xy.x + xy.y * WIDTH} 
+        value={val}
+        // y={xy.y}
+      />
+    );
+    
+  }
+
+  renderRow(row) {
+    // const row = [];
+    // for (let i = 0; i < WIDTH; i++) {
+    //   row.push({y: rowNum, x: i});
+    // }
+
+    return (
+      <div //key={rowNum} 
+      className="board-row">
+        {row.map(xy => {
+          return this.renderSquare(xy);
+        })}
+      </div>
+    );
+  }
+
+  renderBoard(squares) {
+    // const rows = [];
+    
+    // for (let i = 0; i < HEIGHT; i++) {
+    //   rows.push(i);
+    // }
+
+    return (
+      <div className="board">
+        {squares.map((row) => {
+          return this.renderRow(row)
+        })}
+      </div>      
+    );
+
+  }
+
+
+
+  render() {
+    return (
+      <div>
+        {this.renderBoard(this.props.squares)}
+      </div>
+    );
+  }
+}
+
+class Display extends React.Component {
+  renderSquare(val) {
+    return (
+      <Square
+        value={val}
+        // y={xy.y}
+      />
+    );
+    
+  }
+
+  renderRow(row) {
+    return (
+      <div className="board-row">
+        {row.map(val => {
+          return this.renderSquare(val);
+        })}
+      </div>
+    );
+  }
+
+  renderBoard(rows) {
+    return (
+      <div className="board">
+        {rows.map((row) => {
+          return this.renderRow(row)
+        })}
+      </div>      
+    );
+
+  }
+  render() {
+    return (
+      <div>
+        {this.renderBoard(this.props.squares)}
+      </div>
+    );
+  }
+}
+
+class Game extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
+      // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
       xPos: 4,
       yPos: -3,
-      colors: ["empty", "i", "s", "z", "t", "l", "j", "o"],
       lock: false,
       fall: false,
       currentPiece: 0,
       currBag: [],
       nextBag: [],
+
+      // hold display
+      hold: false,
+      holdPiece: new Piece("empty"),
+      holdSquares: new Array(4).fill().map(() => new Array(4).fill("empty")),
     };
     
     this.fall = this.fall.bind(this);
     setInterval(this.fall, 500);
 
     this.lock = this.lock.bind(this)
+  }
+  
+  paintSquares(piece) {
+    const tiles = piece.getCells();
+    const type = piece.type;
+    const squares = new Array(4).fill().map(() => new Array(4).fill("empty"));
+    for (let i = 0; i < tiles.length; i++) {
+      const x = tiles[i].x;
+      const y = tiles[i].y;
+      if (type === "i" || type === "o") squares[y][x] = type;
+      else squares[y+1][x+1] = type;
+    }
+
+    this.setState({
+      holdSquares: squares,
+    });
+  }
+
+  updatePiece(newPiece) {
+    this.paintSquares(newPiece);
+
+    this.setState({
+      holdPiece: newPiece,
+    });
+  }
+
+  holdPiece() {
+    let holdPiece = this.state.holdPiece;
+    
+    if (holdPiece.type === "empty") {
+      holdPiece = this.state.currBag[this.state.currentPiece];
+      this.updatePiece(holdPiece);
+      this.newPiece();
+    } else {
+      const temp = holdPiece;
+      holdPiece = this.state.currBag[this.state.currentPiece];
+      this.updatePiece(holdPiece);
+      let currBag = this.state.currBag.slice();
+      currBag[this.state.currentPiece] = temp;
+      
+      this.setState({
+        currBag: currBag,
+      });
+    }
+
+    this.setState({
+      yPos: -3,
+      xPos: 4,
+      hold: true,
+    });
   }
 
   createBag() {
@@ -85,49 +235,9 @@ class Board extends React.Component {
   }
 
   newPiece() {
-    
-    const y = this.state.yPos;
-    const pieceY = [...new Set(this.state.currBag[this.state.currentPiece].getCells().slice().map(a => a.y))].sort().reverse();
-    
-    console.log(pieceY);
-
-    const squares = this.state.squares.slice();
-    let count = 0;
-    let change = false;
-    for (let i = 0; i < pieceY.length; i++) {
-      var filled = true;
-      if (pieceY[i] + y < 0) continue;
-      for (let x = 0; x < WIDTH; x++) {
-        
-        if (squares[pieceY[i] + y][x] == "empty") {
-          filled = false;
-          break;
-        }
-      }
-      if (filled) {
-        change = true;
-        console.log("clear line", pieceY[i]+y);
-        squares.splice(pieceY[i] + y, 1);
-        count++;
-      }
-    }
-
-    while (count > 0) {
-      const emptyLine = Array(WIDTH).fill("empty");
-      squares.splice(0,0,emptyLine);
-      count--;
-    }
-
-    if (change) {
-      this.setState({
-        squares: squares,
-      })
-    }
-
     const currentPiece = (this.state.currentPiece + 1) % this.state.currBag.length;
-    console.log(currentPiece);
     
-    if (currentPiece == 0) {
+    if (currentPiece === 0) {
       this.createBag();
     }
 
@@ -155,14 +265,54 @@ class Board extends React.Component {
     
   }
 
+  clearLine() {
+    
+    const y = this.state.yPos;
+    const pieceY = [...new Set(this.state.currBag[this.state.currentPiece].getCells().slice().map(a => a.y))].sort().reverse();
+    
+
+    const squares = this.state.squares.slice();
+    let count = 0;
+    let change = false;
+    for (let i = 0; i < pieceY.length; i++) {
+      var filled = true;
+      if (pieceY[i] + y < 0) continue;
+      for (let x = 0; x < WIDTH; x++) {
+        
+        if (squares[pieceY[i] + y][x] === "empty") {
+          filled = false;
+          break;
+        }
+      }
+      if (filled) {
+        change = true;
+        squares.splice(pieceY[i] + y, 1);
+        count++;
+      }
+    }
+
+    while (count > 0) {
+      const emptyLine = Array(WIDTH).fill("empty");
+      squares.splice(0,0,emptyLine);
+      count--;
+    }
+
+    if (change) {
+      this.setState({
+        squares: squares,
+      })
+    }
+  }
+
   handleKeyPress(e) {
     // console.log("key pressed " + e.key);
-    
+
     let redraw = false;
-    let reset = false;
+    // let reset = false;
     switch( e.key ) {
-      case "p":
-      case "r": reset = true;
+      // case "p":
+      // case "r": reset = true;
+      case "c":
       case "ArrowUp":
       case "x": 
       case "z": 
@@ -176,12 +326,12 @@ class Board extends React.Component {
       // console.log("Nothing to do");
       return;
     }
-    if (reset) {
-      const arr = Array(200).fill("empty");
-      this.setState({
-        squares: arr,
-      });
-    }
+    // if (reset) {
+    //   const arr = Array(200).fill("empty");
+    //   this.setState({
+    //     squares: arr,
+    //   });
+    // }
     let x = this.state.xPos;
     let y = this.state.yPos;
     this.paintCells(true, x, y);
@@ -191,11 +341,11 @@ class Board extends React.Component {
     let movedDown = false;
     let rotated = false;
     let hardDrop = false;
-
-    let testPiece = this.state.currentPiece;
-    console.log(x,y);
+    let hold = false;
+    // let testPiece = this.state.currentPiece;
     switch( e.key ) {
-      case "p": testPiece = (testPiece + 1) % this.state.currBag.length; break;
+      // case "p": testPiece = (testPiece + 1) % this.state.currBag.length; break;
+      case "c": hold = true; break;
       case "ArrowUp":
       case "x": rotated = true; this.state.currBag[this.state.currentPiece].rotate(true); break;
       case "z": rotated = true; this.state.currBag[this.state.currentPiece].rotate(false); break; 
@@ -206,7 +356,12 @@ class Board extends React.Component {
       default: break;
     }
     
-    if (testPiece !== this.state.currentPiece) this.setState({currentPiece: testPiece});
+    if (hold) {
+      this.holdPiece();
+      return;
+    }
+
+    // if (testPiece !== this.state.currentPiece) this.setState({currentPiece: testPiece});
     if (rotated) {
       movedDown = true;
       movedLeft = true;
@@ -245,6 +400,7 @@ class Board extends React.Component {
     
     this.paintCells(false, x, y);
     if (hardDrop) {
+      this.clearLine();
       this.newPiece();
     }
     
@@ -256,56 +412,14 @@ class Board extends React.Component {
 
   componentWillUnmount() {
       document.removeEventListener("keydown", this.handleKeyPress.bind(this));
-  }  
-
-  renderSquare(xy) {
-    return (
-      <Square key={xy.x + xy.y * WIDTH} 
-        value={this.state.squares[xy.y][xy.x]}
-        // y={xy.y}
-      />
-    );
-    
-  }
-
-  renderRow(rowNum) {
-    const row = [];
-    for (let i = 0; i < WIDTH; i++) {
-      row.push({y: rowNum, x: i});
-    }
-
-    return (
-      <div key={rowNum} className="board-row">
-        {row.map(xy => {
-          return this.renderSquare(xy);
-        })}
-      </div>
-    );
-  }
-
-  renderBoard() {
-    const rows = [];
-    
-    for (let i = 0; i < HEIGHT; i++) {
-      rows.push(i);
-    }
-
-    return (
-      <div className="board">
-        {rows.map((number) => {
-          return this.renderRow(number)
-        })}
-      </div>      
-    );
-
-  }
-
+  } 
   lock() {
     let lockFrame = this.state.lock;
     const x = this.state.xPos;
     const y = this.state.yPos + 1;
     const tiles = this.state.currBag[this.state.currentPiece].getBottomParts().slice();
     if (lockFrame && this.invalidDownMove(tiles, x, y)) {
+      this.clearLine();
       this.newPiece();
     } else {
       lockFrame = false;
@@ -317,6 +431,18 @@ class Board extends React.Component {
   }
 
   fall() {
+    let hold = this.state.hold;
+    
+    if (hold) {
+      this.setState({
+        hold: false,
+        lock: false,
+        yPos: -3,
+        xPos: 4,
+      });
+      return;
+    }
+    
     let lockFrame = this.state.lock;
     const x = this.state.xPos;
     const y = this.state.yPos + 1;
@@ -349,118 +475,17 @@ class Board extends React.Component {
       this.createBag();
       this.createBag();
     }
-    
-    return (
-      <div>
-        {/* <div className="status">{status}</div> */}
-        {this.renderBoard()}
-      </div>
-    );
-  }
-}
-
-class Display extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      squares: new Array(4).fill().map(() => new Array(4).fill("empty")),
-      currentPiece: new I(),
-    };
-  }
-
-  paintSquares(piece) {
-    const tiles = piece.getCells();
-    const type = piece.val;
-    const squares = this.state.sqaures.slice();
-    for (let i = 0; i < tiles.length; i++) {
-      const x = tiles[i].x;
-      const y = tiles[i].y;
-      squares[y][x] = type;
-    }
-
-    this.setState({
-      squares: squares,
-    });
-  }
-
-  updatePiece(newPiece) {
-    var currentPiece = new Piece();
-    switch(newPiece) {
-      case "I": currentPiece = new I(); break;
-      case "L": currentPiece = new L(); break;
-      case "J": currentPiece = new J(); break;
-      case "S": currentPiece = new S(); break;
-      case "Z": currentPiece = new Z(); break;
-      case "O": currentPiece = new O(); break;
-      default: break;
-    }
-
-    this.paintSquares(currentPiece);
-
-    this.setState({
-      currentPiece: currentPiece,
-    });
-  }
-
-  renderSquare(xy) {
-    return (
-      <Square key={xy.x + xy.y * WIDTH} 
-        value={this.state.squares[xy.y][xy.x]}
-        // y={xy.y}
-      />
-    );
-    
-  }
-
-  renderRow(rowNum) {
-    const row = [];
-    for (let i = 0; i < 4; i++) {
-      row.push({y: rowNum, x: i});
-    }
-
-    return (
-      <div key={rowNum} className="board-row">
-        {row.map(xy => {
-          return this.renderSquare(xy);
-        })}
-      </div>
-    );
-  }
-
-  renderBoard() {
-    const rows = [];
-    
-    for (let i = 0; i < 4; i++) {
-      rows.push(i);
-    }
-
-    return (
-      <div className="board">
-        {rows.map((number) => {
-          return this.renderRow(number)
-        })}
-      </div>      
-    );
-
-  }
-  render() {
-    return (
-      <div>
-        {this.renderBoard()}
-      </div>
-    );
-  }
-}
-
-class Game extends React.Component {
-  render() {
     return (
       <div className="game">
         <div className="hold-piece">
-          <Display />
+          <Display 
+            squares={this.state.holdSquares}
+          />
         </div>
         <div className="game-board">
-          <Board />
+          <Board 
+            squares={this.state.squares}
+          />
         </div>
         <div className="game-info">
           <div>{/* status */}</div>
