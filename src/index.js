@@ -6,6 +6,8 @@ const {I, J, L, S, Z, O, T, Piece} = require('./piece.js');
 
 const WIDTH = 10;
 const HEIGHT = 20;
+const START_Y = -1;
+const START_X = 4;
 
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -119,29 +121,61 @@ class Display extends React.Component {
 
 class Game extends React.Component {
   constructor(props) {
-    super(props)
+    super(props);
+    let currBag = [new I("i"), new J("j"), new L("l"),new O("o"),new S("s"),new Z("z"),new T("t")]
+    shuffle(currBag);
+
+    let nextBag = [new I("i"), new J("j"), new L("l"),new O("o"),new S("s"),new Z("z"),new T("t")]
+    shuffle(nextBag);
+
+    let arr = [];
+    let nextPiece = 1;
+    
+    while (nextPiece < currBag.length) {
+      arr.push(currBag[nextPiece]);
+      nextPiece++;
+    }
+    nextPiece = 0;
+    arr.push(nextBag[nextPiece]);
+    
+    const squares = new Array(19).fill().map(() => new Array(4).fill("empty"));
+    
+    for (let i = 0; i < 6; i++) {
+      const cells = arr[i].cells[0];
+      const type = arr[i].type;
+      const offset = 3 * i + 1;
+      for (let c = 0; c < cells.length; c++) {
+        const y = offset + cells[c].y
+        const x = cells[c].x;
+        squares[y][x] = type;
+      }
+    }
+
     this.state = {
       // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
-      xPos: 4,
-      yPos: -3,
+      xPos: START_X,
+      yPos: START_Y,
       lock: false,
       fall: false,
       currentPiece: 0,
-      currBag: [],
-      nextBag: [],
+      currBag: currBag,
+      nextBag: nextBag,
 
       // hold display
       hold: false,
       holdPiece: new Piece("empty"),
       holdSquares: new Array(2).fill().map(() => new Array(4).fill("empty")),
       again: false,
+
+      // next display
+      nextSquares: squares,
     };
     
     this.fall = this.fall.bind(this);
     setInterval(this.fall, 500);
-
-    this.lock = this.lock.bind(this)
+    
+    this.lock = this.lock.bind(this);
   }
   
   paintSquares(piece) {
@@ -189,8 +223,8 @@ class Game extends React.Component {
     }
 
     this.setState({
-      yPos: -3,
-      xPos: 4,
+      yPos: START_Y,
+      xPos: START_X,
       hold: true,
     });
   }
@@ -242,12 +276,13 @@ class Game extends React.Component {
     if (currentPiece === 0) {
       this.createBag();
     }
-
+    
     this.setState({
       currentPiece: currentPiece,
-      yPos: -3,
-      xPos: 4,
+      yPos: START_Y,
+      xPos: START_X,
     });
+    this.paintNext();
   }
 
   highestY(x, y) {
@@ -422,6 +457,7 @@ class Game extends React.Component {
   componentWillUnmount() {
       document.removeEventListener("keydown", this.handleKeyPress.bind(this));
   } 
+  
   lock() {
     let lockFrame = this.state.lock;
     const x = this.state.xPos;
@@ -446,8 +482,8 @@ class Game extends React.Component {
       this.setState({
         hold: false,
         lock: false,
-        yPos: -3,
-        xPos: 4,
+        yPos: START_Y,
+        xPos: START_X,
       });
       return;
     }
@@ -478,12 +514,46 @@ class Game extends React.Component {
     
   }
 
+  paintNext() {
+    let arr = [];
+    let nextPiece = this.state.currentPiece + 1;
+    const currBag = this.state.currBag;
+    while (nextPiece < currBag.length) {
+      arr.push(currBag[nextPiece]);
+      nextPiece++;
+    }
+    nextPiece = 0;
+    const nextBag = this.state.nextBag;
+    while (arr.length < 6) {
+      arr.push(nextBag[nextPiece]);
+      nextPiece++;
+    }
+
+    console.log("arr",arr, "currbag",currBag, "nextbag", nextBag,"nextpiece", nextPiece);
+
+
+    const squares = new Array(19).fill().map(() => new Array(4).fill("empty"));
+    
+    for (let i = 0; i < 6; i++) {
+      const cells = arr[i].cells[0];
+      const type = arr[i].type;
+      const offset = 3 * i + 1;
+      for (let c = 0; c < cells.length; c++) {
+        const y = offset + cells[c].y
+        const x = cells[c].x;
+        squares[y][x] = type;
+      }
+    }
+
+    this.setState({
+      nextSquares: squares,
+    });
+  }
+
   render() {
     // start game
-    if (this.state.currBag.length === 0) {
-      this.createBag();
-      this.createBag();
-    }
+    
+
     return (
       <div className="game">
         <div className="hold-piece">
@@ -496,9 +566,10 @@ class Game extends React.Component {
             squares={this.state.squares}
           />
         </div>
-        <div className="game-info">
-          <div>{/* status */}</div>
-          <ol>{/* TODO */}</ol>
+        <div className="next-piece">
+          <Display
+          squares={this.state.nextSquares}
+          />
         </div>
       </div>
     );
