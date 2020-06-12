@@ -134,7 +134,8 @@ class Game extends React.Component {
       // hold display
       hold: false,
       holdPiece: new Piece("empty"),
-      holdSquares: new Array(4).fill().map(() => new Array(4).fill("empty")),
+      holdSquares: new Array(2).fill().map(() => new Array(4).fill("empty")),
+      again: false,
     };
     
     this.fall = this.fall.bind(this);
@@ -144,14 +145,15 @@ class Game extends React.Component {
   }
   
   paintSquares(piece) {
-    const tiles = piece.getCells();
+    const tiles = piece.cells[0];
     const type = piece.type;
-    const squares = new Array(4).fill().map(() => new Array(4).fill("empty"));
+    const squares = new Array(2).fill().map(() => new Array(4).fill("empty"));
     for (let i = 0; i < tiles.length; i++) {
       const x = tiles[i].x;
       const y = tiles[i].y;
-      if (type === "i" || type === "o") squares[y][x] = type;
-      else squares[y+1][x+1] = type;
+      // if (type === "i" || type === "o") 
+      squares[y][x] = type;
+      // else squares[y+1][x+1] = type;
     }
 
     this.setState({
@@ -302,11 +304,15 @@ class Game extends React.Component {
         squares: squares,
       })
     }
+
+    this.setState({
+      again: false,
+    });
   }
 
   handleKeyPress(e) {
     // console.log("key pressed " + e.key);
-
+    if (this.state.hold) return;
     let redraw = false;
     // let reset = false;
     switch( e.key ) {
@@ -356,8 +362,11 @@ class Game extends React.Component {
       default: break;
     }
     
-    if (hold) {
+    if (hold && !this.state.again) {
       this.holdPiece();
+      this.setState({
+        again: true,
+      });
       return;
     }
 
