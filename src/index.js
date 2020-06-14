@@ -151,7 +151,13 @@ class Game extends React.Component {
       }
     }
 
+    this.fall = this.fall.bind(this);
+    const fallId = setInterval(this.fall, 500);
+
     this.state = {
+      // timer
+      fallId: fallId,
+
       // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
       xPos: START_X,
@@ -172,8 +178,7 @@ class Game extends React.Component {
       nextSquares: squares,
     };
     
-    this.fall = this.fall.bind(this);
-    setInterval(this.fall, 500);
+    
     
     this.lock = this.lock.bind(this);
   }
@@ -282,6 +287,11 @@ class Game extends React.Component {
       yPos: START_Y,
       xPos: START_X,
     });
+
+    if (this.invalidDownMove(this.state.currBag[this.state.currentPiece].getCells().slice(), START_X,START_Y)) {
+      console.log("Game Over");
+    }
+
     this.paintNext();
   }
 
