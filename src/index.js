@@ -157,6 +157,7 @@ class Game extends React.Component {
     this.state = {
       // timer
       fallId: fallId,
+      gameOver: false,
 
       // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
@@ -265,6 +266,15 @@ class Game extends React.Component {
     });
   }
 
+  gameOver() {
+    const timer = this.state.fallId;
+    clearInterval(timer);
+    this.setState({
+      gameOver: true,
+      fallId: timer,
+    });
+  }
+
   invalidDownMove(tiles, x, y) {
     function checkTiles(a) {
       const squareY = a.y + this.y;
@@ -290,9 +300,12 @@ class Game extends React.Component {
 
     if (this.invalidDownMove(this.state.currBag[this.state.currentPiece].getCells().slice(), START_X,START_Y)) {
       console.log("Game Over");
+      this.gameOver();
+    } else {
+      this.paintNext();
     }
 
-    this.paintNext();
+    
   }
 
   highestY(x, y) {
@@ -355,9 +368,56 @@ class Game extends React.Component {
     });
   }
 
+  restart() {
+    this.createBag();
+    this.createBag();
+    const fallId = setInterval(this.fall, 500);
+    const squares = new Array(19).fill().map(() => new Array(4).fill("empty"));
+    const arr = this.state.currBag;
+    for (let i = 0; i < 6; i++) {
+      const cells = arr[i].cells[0];
+      const type = arr[i].type;
+      const offset = 3 * i + 1;
+      for (let c = 0; c < cells.length; c++) {
+        const y = offset + cells[c].y
+        const x = cells[c].x;
+        squares[y][x] = type;
+      }
+    }
+    this.setState({
+      // timer
+      fallId: fallId,
+      gameOver: false,
+
+      // board
+      squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
+      xPos: START_X,
+      yPos: START_Y,
+      lock: false,
+      fall: false,
+      currentPiece: 0,
+      // currBag: currBag,
+      // nextBag: nextBag,
+
+      // hold display
+      hold: false,
+      holdPiece: new Piece("empty"),
+      holdSquares: new Array(2).fill().map(() => new Array(4).fill("empty")),
+      again: false,
+
+      // next display
+      nextSquares: squares,
+    });
+  }
+
   handleKeyPress(e) {
     // console.log("key pressed " + e.key);
-    if (this.state.hold) return;
+    if (e.key == "r" && this.state.gameOver) {
+      this.restart(); 
+      return;
+    }
+    
+    if (this.state.hold || this.state.gameOver) return;
     let redraw = false;
     // let reset = false;
     switch( e.key ) {
