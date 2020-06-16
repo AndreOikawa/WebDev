@@ -8,6 +8,7 @@ const WIDTH = 10;
 const HEIGHT = 20;
 const START_Y = -1;
 const START_X = 4;
+const INITIAL_TIMER = 500;
 
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -152,12 +153,13 @@ class Game extends React.Component {
     }
 
     this.fall = this.fall.bind(this);
-    const fallId = setInterval(this.fall, 500);
+    const fallId = setInterval(this.fall, INITIAL_TIMER);
 
     this.state = {
       // timer
       fallId: fallId,
       gameOver: false,
+      nextTick: INITIAL_TIMER,
 
       // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
@@ -211,7 +213,7 @@ class Game extends React.Component {
 
   holdPiece() {
     let holdPiece = this.state.holdPiece;
-    
+    holdPiece.orientation = 0;
     if (holdPiece.type === "empty") {
       holdPiece = this.state.currBag[this.state.currentPiece];
       this.updatePiece(holdPiece);
@@ -279,7 +281,7 @@ class Game extends React.Component {
     function checkTiles(a) {
       const squareY = a.y + this.y;
       const squareX = a.x + this.x;
-      if (squareY < 0) return false;
+      if (squareY < 0 || squareX < 0 || squareX >= WIDTH) return false;
       return (squareY >= HEIGHT || this.squares[squareY][squareX] !== "empty");
     }
     return tiles.map(checkTiles, {x: x, y: y, squares: this.state.squares}).reduce((a,b) => { return a || b; } )
@@ -371,7 +373,7 @@ class Game extends React.Component {
   restart() {
     this.createBag();
     this.createBag();
-    const fallId = setInterval(this.fall, 500);
+    const fallId = setInterval(this.fall, INITIAL_TIMER);
     const squares = new Array(19).fill().map(() => new Array(4).fill("empty"));
     const arr = this.state.currBag;
     for (let i = 0; i < 6; i++) {
@@ -388,6 +390,7 @@ class Game extends React.Component {
       // timer
       fallId: fallId,
       gameOver: false,
+      nextTick: INITIAL_TIMER,
 
       // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
@@ -396,8 +399,6 @@ class Game extends React.Component {
       lock: false,
       fall: false,
       currentPiece: 0,
-      // currBag: currBag,
-      // nextBag: nextBag,
 
       // hold display
       hold: false,
@@ -574,11 +575,17 @@ class Game extends React.Component {
     } else if (!lockFrame) {
       lockFrame = true;
     } else {
-      setTimeout(this.lock, 500);
+      setTimeout(this.lock, INITIAL_TIMER);
     }
 
+    const nextTick = this.state.nextTick - 1;
+    let fallId = this.state.fallId;
+    clearInterval(fallId);
+    fallId = setInterval(this.fall, nextTick);
     this.setState({
       lock: lockFrame,
+      fallId: fallId,
+      nextTick: nextTick,
     });
     
     
