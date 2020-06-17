@@ -154,12 +154,15 @@ class Game extends React.Component {
 
     this.fall = this.fall.bind(this);
     const fallId = setInterval(this.fall, INITIAL_TIMER);
-
+    this.speedUp = this.speedUp.bind(this);
+    const speedUpId = setInterval(this.speedUp, 1000);
     this.state = {
       // timer
       fallId: fallId,
       gameOver: false,
       nextTick: INITIAL_TIMER,
+      speedUpId: speedUpId,
+      deltaT: 0,
 
       // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
@@ -271,9 +274,13 @@ class Game extends React.Component {
   gameOver() {
     const timer = this.state.fallId;
     clearInterval(timer);
+    const speedUp = this.state.speedUpId;
+    clearInterval(speedUp);
+
     this.setState({
       gameOver: true,
       fallId: timer,
+      speedUpId: speedUp,
     });
   }
 
@@ -370,10 +377,44 @@ class Game extends React.Component {
     });
   }
 
+  speedUp() {
+    const deltaT = this.state.deltaT + 1;
+    let speed = this.state.nextTick;
+    if (deltaT < 10) {
+      speed = 1000;
+    } else if (deltaT < 30) {
+      speed = 833;
+    } else if (deltaT < 50) {
+      speed = 666;
+    } else if (deltaT < 70) {
+      speed = 500;
+    } else if (deltaT < 90) {
+      speed = 333;
+    } else if (deltaT < 110) {
+      speed = 166;
+    } else if (deltaT < 130) {
+      speed = 133;
+    } else if (deltaT < 150) {
+      speed = 100;
+    } else if (deltaT < 170) {
+      speed = 66;
+    } else if (deltaT < 190) {
+      speed = 33;
+    } else {
+      speed = 16;
+    }
+
+    this.setState({
+      deltaT: deltaT,
+      nextTick: speed,
+    });
+  }
+
   restart() {
     this.createBag();
     this.createBag();
     const fallId = setInterval(this.fall, INITIAL_TIMER);
+    const speedId = setInterval(this.speedUp, 1000);
     const squares = new Array(19).fill().map(() => new Array(4).fill("empty"));
     const arr = this.state.currBag;
     for (let i = 0; i < 6; i++) {
@@ -391,7 +432,8 @@ class Game extends React.Component {
       fallId: fallId,
       gameOver: false,
       nextTick: INITIAL_TIMER,
-
+      deltaT: 0,
+      speedUpId: speedId,
       // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
       xPos: START_X,
@@ -578,7 +620,7 @@ class Game extends React.Component {
       setTimeout(this.lock, INITIAL_TIMER);
     }
 
-    const nextTick = this.state.nextTick - 1;
+    const nextTick = this.state.nextTick;
     let fallId = this.state.fallId;
     clearInterval(fallId);
     fallId = setInterval(this.fall, nextTick);
