@@ -20,64 +20,16 @@ function shuffle(array) {
 function Square(props) {
   return (
     <button className={props.value + " square"}>
-      {/* {props.y} */}
     </button>
   );
 }
 
-class Board extends React.Component {
-  renderSquare(val) {
-    return (
-      <Square //key={xy.x + xy.y * WIDTH} 
-        value={val}
-        // y={xy.y}
-      />
-    );
-    
-  }
-
-  renderRow(row) {
-    // const row = [];
-    // for (let i = 0; i < WIDTH; i++) {
-    //   row.push({y: rowNum, x: i});
-    // }
-
-    return (
-      <div //key={rowNum} 
-      className="board-row">
-        {row.map(xy => {
-          return this.renderSquare(xy);
-        })}
-      </div>
-    );
-  }
-
-  renderBoard(squares) {
-    // const rows = [];
-    
-    // for (let i = 0; i < HEIGHT; i++) {
-    //   rows.push(i);
-    // }
-
-    return (
-      <div className="board">
-        {squares.map((row) => {
-          return this.renderRow(row)
-        })}
-      </div>      
-    );
-
-  }
-
-
-
-  render() {
-    return (
-      <div>
-        {this.renderBoard(this.props.squares)}
-      </div>
-    );
-  }
+function Text(props) {
+  return (
+    <label>
+    {props.text + " " + props.value}
+    </label>
+  );
 }
 
 class Display extends React.Component {
@@ -85,7 +37,6 @@ class Display extends React.Component {
     return (
       <Square
         value={val}
-        // y={xy.y}
       />
     );
     
@@ -124,9 +75,11 @@ class Game extends React.Component {
   constructor(props) {
     super(props);
     let currBag = [new I("i"), new J("j"), new L("l"),new O("o"),new S("s"),new Z("z"),new T("t")]
+    // let currBag = [new T("t"),new T("t"),new T("t"),new T("t"),new T("t"),new T("t"),new T("t")]
     shuffle(currBag);
 
     let nextBag = [new I("i"), new J("j"), new L("l"),new O("o"),new S("s"),new Z("z"),new T("t")]
+    // let nextBag = [new T("t"),new T("t"),new T("t"),new T("t"),new T("t"),new T("t"),new T("t")]
     shuffle(nextBag);
 
     let arr = [];
@@ -163,6 +116,7 @@ class Game extends React.Component {
       nextTick: INITIAL_TIMER,
       speedUpId: speedUpId,
       deltaT: 0,
+      level: 1,
 
       // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
@@ -182,6 +136,9 @@ class Game extends React.Component {
 
       // next display
       nextSquares: squares,
+
+      // info
+      linesCleared: 0,
     };
     
     
@@ -196,9 +153,7 @@ class Game extends React.Component {
     for (let i = 0; i < tiles.length; i++) {
       const x = tiles[i].x;
       const y = tiles[i].y;
-      // if (type === "i" || type === "o") 
       squares[y][x] = type;
-      // else squares[y+1][x+1] = type;
     }
 
     this.setState({
@@ -242,6 +197,7 @@ class Game extends React.Component {
 
   createBag() {
     let newBag = [new I("i"), new J("j"), new L("l"),new O("o"),new S("s"),new Z("z"),new T("t")]
+    // let newBag = [new T("t"),new T("t"),new T("t"),new T("t"),new T("t"),new T("t"),new T("t")]
     shuffle(newBag);
 
     this.setState({
@@ -338,7 +294,7 @@ class Game extends React.Component {
     
     const y = this.state.yPos;
     const pieceY = [...new Set(this.state.currBag[this.state.currentPiece].getCells().slice().map(a => a.y))].sort().reverse();
-    
+    let linesCleared = this.state.linesCleared;
 
     const squares = this.state.squares.slice();
     let count = 0;
@@ -357,6 +313,7 @@ class Game extends React.Component {
         change = true;
         squares.splice(pieceY[i] + y, 1);
         count++;
+        linesCleared++;
       }
     }
 
@@ -369,6 +326,7 @@ class Game extends React.Component {
     if (change) {
       this.setState({
         squares: squares,
+        linesCleared: linesCleared,
       })
     }
 
@@ -380,33 +338,46 @@ class Game extends React.Component {
   speedUp() {
     const deltaT = this.state.deltaT + 1;
     let speed = this.state.nextTick;
+    let level = this.state.level;
     if (deltaT < 10) {
       speed = 1000;
+      level = 1;
     } else if (deltaT < 30) {
       speed = 833;
+      level = 2;
     } else if (deltaT < 50) {
       speed = 666;
+      level = 3;
     } else if (deltaT < 70) {
       speed = 500;
+      level = 4;
     } else if (deltaT < 90) {
       speed = 333;
+      level = 5;
     } else if (deltaT < 110) {
       speed = 166;
+      level = 6;
     } else if (deltaT < 130) {
       speed = 133;
+      level = 7;
     } else if (deltaT < 150) {
       speed = 100;
+      level = 8;
     } else if (deltaT < 170) {
       speed = 66;
+      level = 9;
     } else if (deltaT < 190) {
       speed = 33;
+      level = 10;
     } else {
       speed = 16;
+      level = 11;
     }
 
     this.setState({
       deltaT: deltaT,
       nextTick: speed,
+      level: level,
     });
   }
 
@@ -434,6 +405,8 @@ class Game extends React.Component {
       nextTick: INITIAL_TIMER,
       deltaT: 0,
       speedUpId: speedId,
+      level: 1,
+
       // board
       squares: new Array(HEIGHT).fill().map(() => new Array(WIDTH).fill("empty")),
       xPos: START_X,
@@ -450,11 +423,13 @@ class Game extends React.Component {
 
       // next display
       nextSquares: squares,
+
+      // info
+      linesCleared: 0,
     });
   }
 
   handleKeyPress(e) {
-    // console.log("key pressed " + e.key);
     if (e.key == "r" && this.state.gameOver) {
       this.restart(); 
       return;
@@ -462,10 +437,7 @@ class Game extends React.Component {
     
     if (this.state.hold || this.state.gameOver) return;
     let redraw = false;
-    // let reset = false;
     switch( e.key ) {
-      // case "p":
-      // case "r": reset = true;
       case "c":
       case "ArrowUp":
       case "x": 
@@ -477,15 +449,9 @@ class Game extends React.Component {
       default: break;
     }
     if (!redraw) {
-      // console.log("Nothing to do");
       return;
     }
-    // if (reset) {
-    //   const arr = Array(200).fill("empty");
-    //   this.setState({
-    //     squares: arr,
-    //   });
-    // }
+
     let x = this.state.xPos;
     let y = this.state.yPos;
     this.paintCells(true, x, y);
@@ -496,9 +462,8 @@ class Game extends React.Component {
     let rotated = false;
     let hardDrop = false;
     let hold = false;
-    // let testPiece = this.state.currentPiece;
+
     switch( e.key ) {
-      // case "p": testPiece = (testPiece + 1) % this.state.currBag.length; break;
       case "c": hold = true; break;
       case "ArrowUp":
       case "x": rotated = true; this.state.currBag[this.state.currentPiece].rotate(true); break;
@@ -518,33 +483,60 @@ class Game extends React.Component {
       return;
     }
 
-    // if (testPiece !== this.state.currentPiece) this.setState({currentPiece: testPiece});
     if (rotated) {
       movedDown = true;
       movedLeft = true;
       movedRight = true;
+      const tiles = this.state.currBag[this.state.currentPiece].getCells().slice();
+      while (tiles.map(a => {
+        const squareX = a.x + x;
+        return (squareX < 0);
+      }).reduce((a,b) => { return a || b; })) {
+        x++;
+      }
+
+      while (tiles.map(a => {
+        const squareX = a.x + x;
+        return (squareX >= WIDTH);
+      }).reduce((a,b) => { return a || b; })) {
+        x--;
+      }
+      if (tiles.map(a => {
+        const squareY = a.y + y;
+        const squareX = a.x + x;
+        return (squareY >= 0 && this.state.squares[squareY][squareX] !== "empty");
+      }).reduce((a,b) => { return a || b; })) {
+        y++;
+      }
+      
     }
+
     if (movedDown) {
       const tiles = this.state.currBag[this.state.currentPiece].getCells().slice();
-      while (this.invalidDownMove(tiles, x, y)) {
+      let prevY = y;
+      while (this.invalidDownMove(tiles, x, y) && y >= 0) {
         y--;
       }
+      if (y < 0) y = prevY
     } 
 
     if (movedLeft) {
-      const leftMost = this.state.currBag[this.state.currentPiece].getLeftParts().slice();
+      const leftMost = this.state.currBag[this.state.currentPiece].getCells().slice();
+      let prevX = x;
       while (leftMost.map(a => {
         const squareY = a.y + y;
         const squareX = a.x + x;
         if (squareY < 0) return false;
         return (squareX < 0 || this.state.squares[squareY][squareX] !== "empty");
-      }).reduce((a,b) => { return a || b; })) {
+      }).reduce((a,b) => { return a || b; }) && x < WIDTH) {
         x++;
       }
+      if (x >= WIDTH) x = prevX;
     } 
 
     if (movedRight) {
-      const rightMost = this.state.currBag[this.state.currentPiece].getRightParts().slice();
+      const rightMost = this.state.currBag[this.state.currentPiece].getCells().slice();
+      let prevX = x;
       while (rightMost.map(a => {
         const squareY = a.y + y;
         const squareX = a.x + x;        
@@ -553,6 +545,7 @@ class Game extends React.Component {
       }).reduce((a,b) => { return a || b; })) {
         x--;
       }
+      if (x < 0) x = prevX;
     }
     
     this.paintCells(false, x, y);
@@ -679,9 +672,23 @@ class Game extends React.Component {
           <Display 
             squares={this.state.holdSquares}
           />
+          <Text
+            text={"Level:"}
+            value={this.state.level}
+          />
+          <br/>
+          <Text
+            text={"Time:"}
+            value={this.state.deltaT}
+          />
+          <br/>
+          <Text
+          text={"Lines Cleared:"}
+          value={this.state.linesCleared}
+          />
         </div>
         <div className="game-board">
-          <Board 
+          <Display 
             squares={this.state.squares}
           />
         </div>
